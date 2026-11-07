@@ -127,6 +127,8 @@ try {
   check("はじめて開くと遊び方が出る", await p.locator("#howto[open]").count() === 1);
   await p.keyboard.press("Escape"); await p.waitForTimeout(100);
   check("遊び方を Esc で閉じても覚える（次は開かない）", await p.locator("#howto[open]").count() === 0 && await p.evaluate(() => __rk.load().tut === true));
+  await p.reload(); await p.waitForTimeout(250);
+  check("Esc で閉じたあと開き直しても遊び方が出ない", await p.locator("#howto[open]").count() === 0);
   check("文字の大きさ：はじめは「ふつう」（17px）", await p.evaluate(() => getComputedStyle(document.documentElement).fontSize) === "17px");
   await p.click('.fsrow button[data-fs="3"]');
   await p.reload(); await p.waitForTimeout(150);
