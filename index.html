@@ -441,9 +441,10 @@ function tidy(s) {
   for (const b of [s.days, s.hdays, s.adays]) for (const d in b) if (!okDate(d) || !okRec(b[d])) delete b[d];
   for (const m in s.runs) {
     const r = s.runs[m]; if (r === null) continue;
-    if (typeof r !== "object" || !okDate(r.date) || !Array.isArray(r.list) || !r.list.every(okTag) || !Array.isArray(r.res) || !r.res.every((x) => x && typeof x === "object" && Number.isInteger(x.m) && x.m >= 0)) { delete s.runs[m]; continue; }
+    if (typeof r !== "object" || !["d", "h", "p", "e", "a"].includes(r.mode) || !okDate(r.date) || runKey(r.mode, r.date) !== m || !Array.isArray(r.list) || !r.list.every(okTag) || !Array.isArray(r.res) || !r.res.every((x) => x && typeof x === "object" && Number.isInteger(x.m) && x.m >= 0)) { delete s.runs[m]; continue; }
     if (r.cur != null && (typeof r.cur !== "object" || !Array.isArray(r.cur.wrong))) r.cur = null;
     else if (r.cur) { r.cur.hints = Math.min(2, num(r.cur.hints)); r.cur.placed = num(r.cur.placed); r.cur.wrong = r.cur.wrong.filter((w) => typeof w === "string"); }
+    if (r.ok != null) r.ok = Number.isInteger(r.ok) && r.ok >= 0 ? r.ok : 0;
     delete r.life; // 前の版のような「のこり」は使わない（好きなだけ遊べる）
   }
   return s;
@@ -502,6 +503,7 @@ const footer = () => `<footer><a href="#" id="f-how">遊び方</a><a href="#" id
 function bindFooter() { const h = $("f-how"); if (h) h.onclick = (e) => { e.preventDefault(); openHow(); }; const a = $("f-about"); if (a) a.onclick = (e) => { e.preventDefault(); about(); }; }
 function openHow() { $("fb2").href = FEEDBACK; const d = $("howto"); if (d.showModal) d.showModal(); else d.setAttribute("open", ""); }
 $("howto-ok").onclick = () => { const d = $("howto"); d.close ? d.close() : d.removeAttribute("open"); save((s) => { s.tut = true; }); };
+$("howto").addEventListener("close", () => save((s) => { s.tut = true; }));
 
 function home() {
   const s = load(), k = todayKey(), done = s.days[k], hdone = s.hdays[k];

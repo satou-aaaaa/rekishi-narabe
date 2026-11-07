@@ -125,7 +125,8 @@ try {
   // はじめて：遊び方が出る・文字の大きさ
   const p = await newPage();
   check("はじめて開くと遊び方が出る", await p.locator("#howto[open]").count() === 1);
-  await p.click("#howto-ok");
+  await p.keyboard.press("Escape"); await p.waitForTimeout(100);
+  check("遊び方を Esc で閉じても覚える（次は開かない）", await p.locator("#howto[open]").count() === 0 && await p.evaluate(() => __rk.load().tut === true));
   check("文字の大きさ：はじめは「ふつう」（17px）", await p.evaluate(() => getComputedStyle(document.documentElement).fontSize) === "17px");
   await p.click('.fsrow button[data-fs="3"]');
   await p.reload(); await p.waitForTimeout(150);
@@ -220,10 +221,11 @@ try {
   {
     // 引き継ぎコードなどで数の所に文字が入っても、画面に HTML として出さない
     const q = await newPage(); await closeHow(q);
-    await q.evaluate(() => { const s = JSON.parse(localStorage.getItem("rekishi-v1")) || { v: 1 }; s.ebest = '<img id="xss" src=x>'; s.solved = '"><b id="xss4">'; s.dex = { a01: '"><b id="xss2">', zz: 3 }; s.runs = { e: { mode: "e", id: "x", date: "2026-11-07", list: ["0|a01.c01.g01"], res: [], life: 2, cur: { i: 0, tag: "0|a01.c01.g01", placed: '"><i id="xss3">', wrong: [], hints: 9 } }, h: { list: "bad", res: [] }, p: { mode: "p", id: "y", date: "2026-11-07", list: ["0|constructor"], res: [] }, d: { mode: "d", id: "z", date: "x", list: ["0|a01.c01.g01"], res: [] }, a1: { mode: "a", id: "a1", date: "2026-11-06", list: ["0|a01.c01.g01"], res: [null] } }; s.days = { "2026-11-07": { m: "x" }, bad: { m: [0] }, "2026-02-30": { m: [0] } }; localStorage.setItem("rekishi-v1", JSON.stringify(s)); });
+    await q.evaluate(() => { const s = JSON.parse(localStorage.getItem("rekishi-v1")) || { v: 1 }; s.ebest = '<img id="xss" src=x>'; s.solved = '"><b id="xss4">'; s.dex = { a01: '"><b id="xss2">', zz: 3 }; s.runs = { e: { mode: "e", id: "x", date: "2026-11-07", list: ["0|a01.c01.g01"], res: [], ok: "abc", life: 2, cur: { i: 0, tag: "0|a01.c01.g01", placed: '"><i id="xss3">', wrong: [], hints: 9 } }, h: { list: "bad", res: [] }, p: { mode: "p", id: "y", date: "2026-11-07", list: ["0|constructor"], res: [] }, d: { mode: "d", id: "z", date: "x", list: ["0|a01.c01.g01"], res: [] }, a1: { mode: "a", id: "a1", date: "2026-11-06", list: ["0|a01.c01.g01"], res: [null] }, "a:2026-11-05": { mode: "x", id: "w", date: "2026-11-05", list: ["0|a01.c01.g01"], res: [] }, "a:2026-11-04": { mode: "d", id: "v", date: "2026-11-04", list: ["0|a01.c01.g01"], res: [] } }; s.days = { "2026-11-07": { m: "x" }, bad: { m: [0] }, "2026-02-30": { m: [0] } }; localStorage.setItem("rekishi-v1", JSON.stringify(s)); });
     await q.reload(); await q.waitForTimeout(250);
     const st = await q.evaluate(() => __rk.load());
     check("記録の形を直す：数の所の文字は0に・知らないできごと・形のちがう途中経過と日ごとの記録は捨てる・前の版の life は読まない", st.ebest === 0 && st.solved === 0 && st.dex.a01 === 0 && !("zz" in st.dex) && st.runs.e && !("life" in st.runs.e) && st.runs.e.cur.placed === 0 && st.runs.e.cur.hints === 2 && !("h" in st.runs) && !("p" in st.runs) && !("d" in st.runs) && !("a1" in st.runs) && Object.keys(st.days).length === 0);
+    check("記録の形を直す：知らない遊び方・置き場所と遊び方が合わない途中経過は捨て、文字の ok は0にする", st.runs.e.ok === 0 && !("a:2026-11-05" in st.runs) && !("a:2026-11-04" in st.runs));
     await q.click("#go-e").catch(() => {}); await q.waitForTimeout(150);
     check("記録の文字を HTML として出さない", await q.locator("#xss, #xss2, #xss3, #xss4").count() === 0);
     await q.context().close();
