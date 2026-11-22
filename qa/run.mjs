@@ -14,7 +14,7 @@ import { checkSwStall } from "./sw-check.mjs";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const results = [];
 const check = (name, ok, detail = "") => results.push({ name, ok: !!ok, detail: String(detail).slice(0, 400) });
-const firstClose = async (q) => { if (await q.locator("#howto[open]").count()) await q.click("#howto-ok"); if (await q.locator("#core-coach").count()) { await q.evaluate(() => Core.coach.leave()); await q.waitForTimeout(100); } }; // はじめての練習の吹き出しをやめてホームへ（sync-template の migrateFirstQa が足した）
+const firstClose = async (q) => { if (await q.locator("#howto[open]").count()) await q.click("#howto-ok"); if (await q.evaluate(() => !!(window.Core && Core.coach && Core.coach.active()))) { await q.evaluate(() => { Core.coach.leave(); scrollTo(0, 0); }); await q.waitForTimeout(100); } }; // はじめての練習の吹き出しをやめてホームへ（sync-template の migrateFirstQa が足した）
 const G = createRequire(import.meta.url)(path.join(root, "data.js"));
 
 // ---- 1. できごとのデータと問題の作り方（ブラウザを使わない）----
@@ -356,11 +356,11 @@ try {
     const c = await browser.newContext({ viewport: { width: 390, height: 844 } });
     await c.addInitScript(() => { window.__origSetItem = Storage.prototype.setItem; Storage.prototype.setItem = function () { throw new Error("QuotaExceededError"); }; });
     const q = await c.newPage(); await q.goto(url); await q.waitForTimeout(300);
-    if (!(await q.locator("#howto[open]").count())) await firstClose(q).then(() => q.click("#f-how"));
+    if (!(await q.locator("#howto[open]").count())) await firstClose(q).then(() => q.evaluate(() => openHow()));
     await firstClose(q); await q.waitForTimeout(100);
     const n1 = await q.locator("#savewarn").count(); await q.waitForTimeout(2000); const n2 = await q.locator("#savewarn").count();
     await q.evaluate(() => { Storage.prototype.setItem = window.__origSetItem; });
-    await firstClose(q).then(() => q.click("#f-how")); await firstClose(q); await q.waitForTimeout(100);
+    await firstClose(q).then(() => q.evaluate(() => openHow())); await firstClose(q); await q.waitForTimeout(100);
     const n3 = await q.locator("#savewarn").count();
     check("保存できないときは帯（#savewarn）を1つ出し、2秒たっても残る。保存できるようになると消える", n1 === 1 && n2 === 1 && n3 === 0, [n1, n2, n3].join(","));
     await c.close();
